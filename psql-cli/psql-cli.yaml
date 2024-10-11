@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: psql-cli-deployment
+  namespace: demo
+spec:
+  selector:
+    matchLabels:
+      app: psql-cli
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: psql-cli
+    spec:
+      containers:
+      - name: psql-cli
+        image: dynafire/psql-cli
+        env:
+          - name: PGPORT
+            value: "5432"
+          - name: PGHOST
+            value: $(ACID_CLUSTER_PORT_5432_TCP_ADDR)
+          - name: PGUSER
+            value: pguser
+          - name: PGDATABASE
+            value: testdb
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: pguser.acid-cluster.credentials.postgresql.acid.zalan.do
+                key: password
+                optional: true
