@@ -10,6 +10,7 @@ on:
     paths:
       - psql-cli/**/*
       - llama.cpp-base/**/*
+  workflow_dispatch:  # enables manual runs
 
 jobs:
   validate:
