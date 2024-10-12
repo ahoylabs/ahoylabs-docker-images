@@ -68,3 +68,32 @@ jobs:
           cd $IMAGE
           docker build --pull -t "${{ env.CI_REGISTRY_PATH }}/${{ env.IMAGE }}" .
           docker push "${{ env.CI_REGISTRY_PATH }}/${{ env.IMAGE }}"
+
+  build_llama_base:
+    name: Build llama.cpp-base Image
+    runs-on: ubuntu-latest
+    needs: validate
+
+    services:
+      docker:
+        image: docker:20.10.16
+        options: --privileged
+
+    env:
+      IMAGE: llama.cpp-base
+      CI_REGISTRY_PATH: index.docker.io/ahoylabs
+      CI_REGISTRY_USER: ${{ secrets.CI_REGISTRY_USER }}
+      CI_REGISTRY_PASSWORD: ${{ secrets.CI_REGISTRY_PASSWORD }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        run: docker login -u "${{ secrets.CI_REGISTRY_USER }}" -p "${{ secrets.CI_REGISTRY_PASSWORD }}"
+
+      - name: Build llama.cpp-base Docker image
+        run: |
+          cd $IMAGE
+          docker build --pull -t "${{ env.CI_REGISTRY_PATH }}/${{ env.IMAGE }}" .
+          docker push "${{ env.CI_REGISTRY_PATH }}/${{ env.IMAGE }}"
