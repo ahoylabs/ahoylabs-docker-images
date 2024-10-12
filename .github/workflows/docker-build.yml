@@ -9,6 +9,7 @@ on:
       - main
     paths:
       - psql-cli/**/*
+      - llama.cpp-base/**/*
 
 jobs:
   validate:
