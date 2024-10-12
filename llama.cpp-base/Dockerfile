@@ -22,7 +22,7 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-RUN git clone https://github.com/ggerganov/llama.cpp.git . && git checkout b3135
+RUN git clone https://github.com/ggerganov/llama.cpp.git . && git checkout b3853
 
 # Set nvcc architecture
 ENV CUDA_DOCKER_ARCH=${CUDA_DOCKER_ARCH}
