@@ -1,0 +1,6 @@
+{
+    "input": {
+        "n_predict": 10,
+        "prompt": "Tell me about llamas"
+    }
+}
