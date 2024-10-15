@@ -11,6 +11,7 @@ on:
       - psql-cli/**/*
       - llama.cpp-base/**/*
       - llama.cpp/**/*
+      - whisper.cpp/**/*
   workflow_dispatch:  # enables manual runs
 
 jobs:
@@ -129,3 +130,33 @@ jobs:
           cd $IMAGE
           docker build --pull -t "${{ env.CI_REGISTRY_PATH }}/${{ env.IMAGE }}" .
           docker push "${{ env.CI_REGISTRY_PATH }}/${{ env.IMAGE }}"
+
+  build_whisper:
+            name: Build whisper.cpp Image
+            runs-on: ubuntu-latest
+            needs: validate
+        
+            services:
+              docker:
+                image: docker:20.10.16
+                options: --privileged
+        
+            env:
+              IMAGE: whisper.cpp
+              CI_REGISTRY_PATH: index.docker.io/ahoylabs
+              CI_REGISTRY_USER: ${{ secrets.CI_REGISTRY_USER }}
+              CI_REGISTRY_PASSWORD: ${{ secrets.CI_REGISTRY_PASSWORD }}
+        
+            steps:
+              - name: Check out repository
+                uses: actions/checkout@v4
+        
+              - name: Log in to Docker Hub
+                run: docker login -u "${{ secrets.CI_REGISTRY_USER }}" -p "${{ secrets.CI_REGISTRY_PASSWORD }}"
+        
+              - name: Build whisper.cpp Docker image
+                run: |
+                  cd $IMAGE
+                  docker build --pull -t "${{ env.CI_REGISTRY_PATH }}/${{ env.IMAGE }}" .
+                  docker push "${{ env.CI_REGISTRY_PATH }}/${{ env.IMAGE }}"
+        
