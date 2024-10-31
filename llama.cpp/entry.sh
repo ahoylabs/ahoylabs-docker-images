@@ -69,20 +69,21 @@ export LLAMA_CACHE=$WORKSPACE/models
 if [ "$MODE" = "SLEEP" ]; then
   /usr/bin/sleep infinity
   exit
+# this probably doesn't work right now
 elif [ "$MODE" = "BENCH_FIRST" ]; then
   # if we auto restart after crash, don't run benchmark
   CHECK_FILE=$WORKSPACE/bench_complete
   if [ ! -f "$CHECKFILE" ]; then
     echo Downloading $filename and running short benchmark
     cd $WORKSPACE/models && wget $LLAMA_MU
-    cd $WORKSPACE && /llama.cpp/batched-bench models/$filename $LLAMA_CONTEXT $LLAMA_UB $LLAMA_UB 0 0 999 2048 256 1,1,1,1,2
-    echo benchmark complete, running /llama.cpp/server in 5 seconds..
+    cd $WORKSPACE && /llama.cpp/llama-batched-bench models/$filename $LLAMA_CONTEXT $LLAMA_UB $LLAMA_UB 0 0 999 2048 256 1,1,1,1,2
+    echo benchmark complete, running /llama.cpp/llama-server in 5 seconds..
     touch $CHECK_FILE
     sleep 5
   fi
 fi
 
-/llama.cpp/server $MODEL_ARG $LLAMA_FA $UB_ARG -c $LLAMA_CONTEXT -t $LLAMA_NP \
+/llama.cpp/llama-server $MODEL_ARG $LLAMA_FA $UB_ARG -c $LLAMA_CONTEXT -t $LLAMA_NP \
   -np $LLAMA_NP $LLAMA_NGL --rope-freq-scale $LLAMA_ROPE_FREQ_SCALE \
   --port $LLAMA_PORT $LLAMA_ADDITIONAL_ARGS $API_KEY_ARG $CTK_ARG $CTV_ARG \
   --threads-http $LLAMA_THREADS_HTTP
