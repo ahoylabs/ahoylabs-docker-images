@@ -34,7 +34,7 @@ ENV LLAMA_CURL=1
 ENV LLAMA_CUDA_FA_ALL_QUANTS=1
 ENV GGML_CUDA_FA_ALL_QUANTS=1
 
-RUN make -j 12
+RUN make -j 12 llama-batched-bench llama-server
 
 FROM ${CUDA_BASE_CONTAINER} as runtime
 
