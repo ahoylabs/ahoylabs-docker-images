@@ -1,3 +1,6 @@
+# llama tag or commit to checkout
+ARG LLAMA_COMMIT=b4562
+
 ARG UBUNTU_VERSION=22.04
 # This needs to generally match the container host's environment.
 # We use a slightly older version for greater compatibility
@@ -9,34 +12,44 @@ ARG CUDA_RUN_CONTAINER=nvidia/cuda:${CUDA_VERSION}-runtime-ubuntu${UBUNTU_VERSIO
 # CUDA base image (excludes cublas)
 ARG CUDA_BASE_CONTAINER=nvidia/cuda:${CUDA_VERSION}-base-ubuntu${UBUNTU_VERSION}
 
-FROM ${CUDA_DEV_CONTAINER} as build
+FROM ${CUDA_DEV_CONTAINER} AS build
 
-# try more targetted build
-# ARG CUDA_DOCKER_ARCH=all
-# try targetind sm_80, the A100's version
-# this supports all ampere and later GPUs
-ARG CUDA_DOCKER_ARCH=sm_80
 
 RUN apt-get update && \
-    apt-get install -y build-essential git libcurl4-openssl-dev ccache
+    apt-get install -y build-essential git libcurl4-openssl-dev ccache cmake
 
 WORKDIR /app
 
-RUN git clone https://github.com/ggerganov/llama.cpp.git . && git checkout b3853
+RUN echo "checking out llama.cpp and commit or tag LLAMA_COMMIT=${LLAMA_COMMIT}"
+RUN git clone https://github.com/ggerganov/llama.cpp.git . && git checkout ${LLAMA_COMMIT}
 
+# try more targetted build
+# try targeting 80, the A100's version
+# this supports all ampere and later GPUs
 # Set nvcc architecture
-ENV CUDA_DOCKER_ARCH=${CUDA_DOCKER_ARCH}
+ENV FLAG_ARCH="CMAKE_CUDA_ARCHITECTURES=80"
 # Enable CUDA
-ENV LLAMA_CUDA=1
+ENV FLAG_CUDA="GGML_CUDA=ON"
 # Enable cURL
-ENV LLAMA_CURL=1
+ENV FLAG_CURL="LLAMA_CURL=ON"
 # Enable quantized kv
-ENV LLAMA_CUDA_FA_ALL_QUANTS=1
-ENV GGML_CUDA_FA_ALL_QUANTS=1
+ENV FLAG_QUANTS="GGML_CUDA_FA_ALL_QUANTS=ON"
+# Static builds
+ENV FLAG_STATIC="BUILD_SHARED_LIBS=OFF"
 
-RUN make -j 12 llama-batched-bench llama-server
+# CMake Configuration Step
+RUN cmake -B build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -D${FLAG_ARCH} \
+  -D${FLAG_CUDA} \
+  -D${FLAG_CURL} \
+  -D${FLAG_QUANTS} \
+  -D${FLAG_STATIC}
 
-FROM ${CUDA_BASE_CONTAINER} as runtime
+#Unclear if cmake honors env vars
+RUN cmake --build build --target llama-batched-bench llama-server --config Release -j 12
+
+FROM ${CUDA_BASE_CONTAINER} AS runtime
 
 RUN /bin/echo -e '#!/bin/bash\nDEBIAN_FRONTEND=noninteractive\napt-get update && apt-get install -y $@ && apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/apt/lists/*' \
     > /usr/local/sbin/apt_install_clean.sh && \
@@ -51,6 +64,6 @@ RUN /usr/local/sbin/apt_install_clean.sh libcublas-12-3 libcurl4 libgomp1
 
 # copy server and batched bench
 RUN mkdir -p /llama.cpp
-COPY --from=build /app/llama-server /app/llama-batched-bench /llama.cpp/
+COPY --from=build /app/build/bin/llama-server /app/build/bin/llama-batched-bench /llama.cpp/
 
 ENTRYPOINT [ "/llama.cpp/llama-server" ]
